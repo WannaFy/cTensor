@@ -22,6 +22,12 @@ def attach_grad(u, grad):
     '''
     During backpropagation, attach computed grad into precedents.
     If forward process includes broadcasting, unbroadcast grad.
+
+
+    change:
+    Frey wong change the grad=grad.mean to grad=grad.sum
+
+    to fix:
     '''
     if not u.requires_grad:
         return
@@ -30,13 +36,18 @@ def attach_grad(u, grad):
         u.grad += grad
         return
 
+    origin_shape=u.grad.shape[:]
+    u.grad.shape=(1,)*(len(grad.shape)-len(u.grad.shape))+origin_shape
     # unbroadcasting
     for dim, chn in enumerate(u.grad.shape):
+        #print("u.grad.shape=",u.grad.shape)
         if chn != grad.shape[dim]:
             assert chn == 1, "Backward unbroadcasting errors"
-            grad = grad.mean(axis=dim, keepdims=True)
+            grad = grad.sum(axis=dim,keepdims=True)
+           # print("grad.shape=",grad.shape)
 
     u.grad += grad
+    u.grad.shape=origin_shape
 
 
 class Tensor:
@@ -236,9 +247,11 @@ class Operator:
         fwd = self.forward(*args)
         if fwd.precedents:
             # Operator in Tensor
+            print("hello\n")
             return Tensor(fwd.data, precedents=[fwd], operator=self)
         else:
             # Operation in NumPy
+            #print("waafuck\n")
             return Tensor(fwd.data, precedents=args, operator=self)
 
     def backward(self, x, precedents):
@@ -253,6 +266,7 @@ class View(Operator):
     def forward(self, x):
         self.origin_shape = x.data.shape
         return Tensor(x.data.reshape(*self.shape))
+
 
     def backward(self, x, precedents):
         u, = precedents

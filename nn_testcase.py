@@ -1,3 +1,4 @@
+from ctensor.functional import relu, sigmoid
 import numpy as np
 from ctensor import Tensor
 import ctensor.functional as F
@@ -23,6 +24,7 @@ Y = Tensor(y.reshape(1000, 1))
 #     def forward(self, x):
 #         return F.sigmoid(self.linear_2(F.leaky_relu(self.linear_1(x))))
 
+
 class Model(nn.Module):
     def __init__(self):
         self.main = nn.Sequential(
@@ -31,12 +33,14 @@ class Model(nn.Module):
             nn.Linear(1000, 2),
             nn.Sigmoid(),
         )
-    
+
     def forward(self, x):
         return self.main(x)
 
+
 model = Model()
 adam = Adam(model.parameters())
+
 
 for _ in range(3000):
     indices = np.random.randint(0, 1000, size=128)
@@ -52,3 +56,28 @@ for _ in range(3000):
 
 pred_y = model(X)
 print(((pred_y.data > 0.5) == Y.data).mean())
+
+a = Tensor(np.array([1]))
+b = Tensor(np.arange(1, 10).reshape(3, 3))
+c = a+b
+d = c.sum()
+d.backward()
+
+a = Tensor(np.array([1, -4, 3]))
+b = Tensor(np.array([3]))
+c = a*b
+c = relu(a*b)
+c.backward()
+print("relu")
+print(c)
+print(c.mean())
+print(c.grad)
+print(b.grad)
+print(a.grad)
+print("sigmoid")
+c = sigmoid(a * (1/b))
+c.backward()
+print(c)
+print(c.grad)
+print(b.grad)
+print(a.grad)
